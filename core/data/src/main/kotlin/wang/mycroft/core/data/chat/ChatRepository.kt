@@ -14,9 +14,9 @@ import org.koin.core.annotation.Single
 import wang.mycroft.core.data.model.Bot
 import wang.mycroft.core.data.model.Me
 import wang.mycroft.core.data.model.Message
-import wang.mycroft.core.data.model.ollama.ChatMessage
-import wang.mycroft.core.data.model.ollama.ChatRequest
-import wang.mycroft.core.data.model.ollama.ChatResponse
+import wang.mycroft.core.data.model.deepseek.ChatMessage
+import wang.mycroft.core.data.model.deepseek.ChatRequest
+import wang.mycroft.core.data.model.deepseek.ChatResponse
 
 interface ChatRepository {
     val messages: Flow<List<Message>>
@@ -36,14 +36,18 @@ internal class ChatRepositoryImpl(
             old + Me(input) + Bot("")
         }
 
-        val statement = httpClient.preparePost("http://127.0.0.1:11434/api/chat") {
+        val statement = httpClient.preparePost("https://api.deepseek.com/chat/completions") {
+            header("Authorization", "Bearer <Deepseek API Key>")
             contentType(ContentType.Application.Json)
             setBody(
                 ChatRequest(
+//                    model = "deepseek-chat",
+                    model = "deepseek-reasoner",
                     messages = listOf(
-                        ChatMessage("system", "You're a AI assistant!"),
-                        ChatMessage("user", input)
-                    )
+                        ChatMessage(role = "system", content = "You are a helpful assistant."),
+                        ChatMessage(role = "user", content = input)
+                    ),
+                    stream = true
                 )
             )
         }
@@ -52,17 +56,36 @@ internal class ChatRepositoryImpl(
                 throw Exception("Failed to send message")
             }
 
+            val responseThink = StringBuilder()
             val responseMessage = StringBuilder()
             val channel: ByteReadChannel = response.bodyAsChannel()
             while (!channel.exhausted()) {
-
                 val line = channel.readUTF8Line() ?: break
-                val chatResponse: ChatResponse = json.decodeFromString(line)
-                responseMessage.append(chatResponse.message.content)
+
+                val content = line.removePrefix("data: ")
+                runCatching {
+                    if (content != "[DONE]" && content.trim().isNotEmpty()) {
+                        val chatResponse: ChatResponse = json.decodeFromString(content)
+                        chatResponse.choices
+                            .sortedBy { it.index }
+                            .forEach {
+                                if (it.delta.reasoningContent != null) {
+                                    responseThink.append(it.delta.reasoningContent)
+                                } else {
+                                    responseMessage.append(it.delta.content)
+                                }
+                            }
+                    }
+                }.onFailure {
+                    println("error: $line, $it")
+                }
 
                 _messages.update { old ->
                     val last = old.last() as Bot
-                    old.dropLast(1) + last.copy(message = responseMessage.toString())
+                    old.dropLast(1) + last.copy(
+                        message = responseMessage.toString(),
+                        think = responseThink.toString()
+                    )
                 }
             }
             ChatResult(responseMessage.toString())

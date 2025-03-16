@@ -12,7 +12,7 @@ data class Me(
 
 data class Bot(
     val message: String,
-    val think: String? = null,
+    val think: String = "",
     val created: Instant = Clock.System.now(),
     val updated: Instant = Clock.System.now(),
 ) : Message

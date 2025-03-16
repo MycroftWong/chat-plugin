@@ -13,6 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.mikepenz.markdown.compose.Markdown
 import com.mikepenz.markdown.m3.markdownColor
@@ -128,27 +134,66 @@ private fun BotMessageItem(message: Bot) {
                 color = MaterialTheme.colorScheme.secondary
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        if (message.think.trim().isNotEmpty()) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card {
+                Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 12.dp)) {
+                    Markdown(
+                        message.think,
+                        colors = markdownColor(
+                            text = MaterialTheme.colorScheme.onSurface,
+                            codeText = MaterialTheme.colorScheme.onSurface,
+                            inlineCodeText = MaterialTheme.colorScheme.onSurface,
+                            linkText = MaterialTheme.colorScheme.onSurface,
+                            codeBackground = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                            inlineCodeBackground = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                            dividerColor = MaterialTheme.colorScheme.outlineVariant,
+                            tableText = MaterialTheme.colorScheme.onSurface,
+                            tableBackground = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.02f),
+                        ),
+                        typography = markdownTypography(
+                            text = MaterialTheme.typography.bodySmall,
+                            code = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                            inlineCode = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                            quote = MaterialTheme.typography.bodySmall.plus(SpanStyle(fontStyle = FontStyle.Italic)),
+                            paragraph = MaterialTheme.typography.bodyMedium,
+                            ordered = MaterialTheme.typography.bodyMedium,
+                            bullet = MaterialTheme.typography.bodyMedium,
+                            list = MaterialTheme.typography.bodyMedium,
+                            link = MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline
+                            ),
+                            textLink = TextLinkStyles(
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline
+                                ).toSpanStyle()
+                            ),
+                        ),
+                    )
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
         Markdown(
             message.message,
             colors = markdownColor(),
             typography = markdownTypography()
         )
 
-/*
-        MarkdownText(
-            modifier = Modifier.padding(8.dp),
-            markdown = markdown,
-            maxLines = 3,
-            fontResource = R.font.montserrat_medium,
-            style = TextStyle(
-                color = Color.Blue,
-                fontSize = 12.sp,
-                lineHeight = 10.sp,
-                textAlign = TextAlign.Justify,
-            ),
-
-            )
-*/
+        /*
+                MarkdownText(
+                    modifier = Modifier.padding(8.dp),
+                    markdown = markdown,
+                    maxLines = 3,
+                    fontResource = R.font.montserrat_medium,
+                    style = TextStyle(
+                        color = Color.Blue,
+                        fontSize = 12.sp,
+                        lineHeight = 10.sp,
+                        textAlign = TextAlign.Justify,
+                    ),
+        
+                    )
+        */
     }
 }
